@@ -79,6 +79,7 @@ def crop(img, coordinates):
     img = img[min_y:max_y, min_x:max_x]
     return img
 
+
 def stretch(img, coordinates):
     # reshape borders
     pts = coordinates.reshape(4, 2)

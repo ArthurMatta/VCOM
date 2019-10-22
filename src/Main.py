@@ -1,11 +1,13 @@
 import cv2 as cv
-import numpy as np
 import imutils as iu
+import numpy as np
+
+filepath = "TestFiles/"
 
 
 def openfile(filename):
-    filepath = "TestFiles/"
-    img = cv.imread(filepath + filename, 0)
+    global filepath
+    img = cv.imread(f'{filepath}{filename}', 0)
     height, width = img.shape
     print(f'Initial image Width: {width}, Height: {height}')
     return img
@@ -51,8 +53,9 @@ def find_box(img):
     return box
 
 
-def mask_image(coordinates):
-    img = cv.imread('TestFiles/026245406421_2.jpg', -1)
+def mask_image(coordinates, filename):
+    global filepath
+    img = cv.imread(f'{filepath}{filename}', -1)
     mask = np.zeros(img.shape, dtype=np.uint8)
     roi = np.array([coordinates], dtype=np.int32)
     channel_count = img.shape[2]
@@ -104,30 +107,28 @@ def stretch(img, coordinates):
     # now that we have our rectangle of points, let's compute
     # the width of our new image
     (tl, tr, br, bl) = rect
-    widthA = np.sqrt(((br[0] - bl[0]) ** 2) + ((br[1] - bl[1]) ** 2))
-    widthB = np.sqrt(((tr[0] - tl[0]) ** 2) + ((tr[1] - tl[1]) ** 2))
+    width_a = width_b = np.sqrt(((br[0] - bl[0]) ** 2) + ((br[1] - bl[1]) ** 2))
 
     # ...and now for the height of our new image
-    heightA = np.sqrt(((tr[0] - br[0]) ** 2) + ((tr[1] - br[1]) ** 2))
-    heightB = np.sqrt(((tl[0] - bl[0]) ** 2) + ((tl[1] - bl[1]) ** 2))
+    height_a = height_b = np.sqrt(((tr[0] - br[0]) ** 2) + ((tr[1] - br[1]) ** 2))
 
     # take the maximum of the width and height values to reach
     # our final dimensions
-    maxWidth = max(int(widthA), int(widthB))
-    maxHeight = max(int(heightA), int(heightB))
+    max_width = max(int(width_a), int(width_b))
+    max_height = max(int(height_a), int(height_b))
 
     # construct our destination points which will be used to
     # map the screen to a top-down, "birds eye" view
     dst = np.array([
         [0, 0],
-        [maxWidth - 1, 0],
-        [maxWidth - 1, maxHeight - 1],
-        [0, maxHeight - 1]], dtype="float32")
+        [max_width - 1, 0],
+        [max_width - 1, max_height - 1],
+        [0, max_height - 1]], dtype="float32")
 
     # calculate the perspective transform matrix and warp
     # the perspective to grab the screen
     M = cv.getPerspectiveTransform(rect, dst)
-    warp = cv.warpPerspective(img, M, (maxWidth, maxHeight))
+    warp = cv.warpPerspective(img, M, (max_width, max_height))
 
     return warp
 
@@ -135,8 +136,10 @@ def stretch(img, coordinates):
 def main():
     print("Barcode Reader Start\n")
 
+    filename = "026245406421_2.jpg"
+
     # Open image file
-    image = openfile("026245406421_2.jpg")
+    image = openfile(filename)
     # Highlight details in the image
     gradient = highlight_details(image)
     # Further highlight and blur the rest of the image
@@ -144,7 +147,7 @@ def main():
     # Find the box that contains the barcode
     box = find_box(closed)
     # Attempt image correction
-    masked_image = mask_image(box)
+    masked_image = mask_image(box, filename)
     # Crop and stretch image
     final = crop(masked_image, box)
     # Warp barcode to window

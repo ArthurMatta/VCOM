@@ -133,6 +133,40 @@ def stretch(img, coordinates):
 
     return warp
 
+def dotted(img):
+
+    # Define Dotted Colors
+    red = [0,0,255]
+    blue = [255,0,0]
+
+    # Get Shape
+    height, width, channels = img.shape
+
+    # Get Middle Height
+    middleHeight = int(height/2)
+
+    # Get 1/6 Height
+    sixHeight = int(height/6)
+
+    # Plot Dotted Line for Barcode
+    for x in range(width):
+        # Get Color
+        pixel = img[middleHeight, x]
+
+        # Gray Value
+        gray = 0.02126 * pixel[2] + 0.7152 * pixel[1] + 0.0722 * pixel[0]
+
+        # Decide Result Based On Middle Gray
+        final = blue
+        if gray < 125:
+            final = red
+
+        # Apply Result in 2/6th of Height
+        for y in range(sixHeight*2):
+            img[middleHeight + y - sixHeight, x] = final
+
+    # Show Result
+    cv.imshow('Dotted', img)
 
 def main():
     print("Barcode Reader Start\n")
@@ -158,10 +192,13 @@ def main():
     # Warp barcode to window
     warp = stretch(masked_image, box)
 
+    # Show final detection
     cv.imshow('Final', final)
     cv.imshow('Warp', warp)
 
-    cv.waitKey(0)
+    # Plot Barcode
+    dotted(final)
 
+    cv.waitKey(0)
 
 main()

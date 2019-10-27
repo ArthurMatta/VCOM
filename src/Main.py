@@ -133,6 +133,46 @@ def stretch(img, coordinates):
 
     return warp
 
+# https://stackoverflow.com/questions/56905592/automatic-contrast-and-brightness-adjustment-of-a-color-photo-of-a-sheet-of-pape
+def adjustContrastBrightness(image, histPercent = 1):
+
+    # Convert to Grayscale
+    gray = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
+
+    # Calculate grayscale histogram
+    hist = cv.calcHist([gray],[0],None,[256],[0,256])
+    histSize = len(hist)
+
+    # Calculate cumulative distribution from the histogram
+    accumulator = []
+    accumulator.append(float(hist[0]))
+    for index in range(1, histSize):
+        accumulator.append(accumulator[index -1] + float(hist[index]))
+
+    # Locate points to clip
+    maximum = accumulator[-1]
+    histPercent *= (maximum/100.0)
+    histPercent /= 2.0
+
+    # Locate Left Cut
+    minGray = 0
+    while accumulator[minGray] < histPercent:
+        minGray += 1
+
+    # Locate Right Cut
+    maxGray = histSize -1
+    while accumulator[maxGray] >= (maximum - histPercent):
+        maxGray -= 1
+
+    # Calculate Alpha and Beta values
+    # alpha = 255 / (maxGray - minGray)
+    # g(i,j) = alpha * f(i,j) + beta
+    # beta = -minGray * alpha
+    alpha = 255 / (maxGray - minGray)
+    beta = -minGray * alpha
+
+    return cv.convertScaleAbs(image, alpha=alpha, beta=beta)
+
 def dotted(img):
 
     # Define Dotted Colors
@@ -148,6 +188,9 @@ def dotted(img):
     # Get 1/6 Height
     sixHeight = int(height/6)
 
+    # Auto Adjust Brightness and Contrast
+    img = adjustContrastBrightness(img)
+
     # Plot Dotted Line for Barcode
     for x in range(width):
 
@@ -159,7 +202,7 @@ def dotted(img):
 
         # Decide Result Based On Middle Gray
         final = blue
-        if gray < 125:
+        if gray < 127:
             final = red
 
         # Apply Result in 2/6th of Height
@@ -207,6 +250,8 @@ def describe(img):
         
     print(f'Barcode Right Guard detected at: {rGuard} pixel')
 
+    # TODO
+
 def main():
     print("Barcode Reader Start\n")
 
@@ -236,7 +281,7 @@ def main():
     cv.imshow('Warp', warp)
 
     # Plot Barcode
-    dotPlot = dotted(final)
+    dotPlot = dotted(warp)
     cv.imshow('Dotted', dotPlot)
 
     # Describe Barcode

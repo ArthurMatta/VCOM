@@ -1,6 +1,7 @@
 import cv2 as cv
 import imutils as iu
 import numpy as np
+import sys
 
 filepath = "TestFiles/"
 
@@ -137,6 +138,10 @@ def main():
     print("Barcode Reader Start\n")
 
     filename = "026245406421_2.jpg"
+
+    # Use argument file name
+    if len(sys.argv) == 2:
+        filename = sys.argv[1]
 
     # Open image file
     image = openfile(filename)

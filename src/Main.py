@@ -150,7 +150,8 @@ def dotted(img):
 
     # Plot Dotted Line for Barcode
     for x in range(width):
-        # Get Color
+
+        # Get Pixel
         pixel = img[middleHeight, x]
 
         # Gray Value
@@ -165,8 +166,46 @@ def dotted(img):
         for y in range(sixHeight*2):
             img[middleHeight + y - sixHeight, x] = final
 
-    # Show Result
-    cv.imshow('Dotted', img)
+    return img
+
+# https://cosmosmagazine.com/technology/how-do-barcodes-work
+def describe(img):
+
+    print('\nStarting Barcode Description\n')
+
+    # Get Shape
+    height, width, channels = img.shape
+
+    # Get Middle Height
+    middleHeight = int(height/2)
+    
+    # Detect Barcode Left Guard
+    lGuard = -1
+    for x in range(width):
+
+        # Get Pixel
+        pixel = img[middleHeight, x]
+
+        # Found Red(Black Bar)
+        if pixel[2] == 255:
+            lGuard = x
+            break
+
+    print(f'Barcode Left Guard detected at: {lGuard} pixel')
+    
+    # Detect Barcode Right Guard
+    rGuard = -1
+    for x in range(width):
+
+        # Get Pixel
+        pixel = img[middleHeight, width-x-1]
+
+        # Found Red(Black Bar)
+        if pixel[2] == 255:
+            rGuard = width-x-1
+            break
+        
+    print(f'Barcode Right Guard detected at: {rGuard} pixel')
 
 def main():
     print("Barcode Reader Start\n")
@@ -197,7 +236,11 @@ def main():
     cv.imshow('Warp', warp)
 
     # Plot Barcode
-    dotted(final)
+    dotPlot = dotted(final)
+    cv.imshow('Dotted', dotPlot)
+
+    # Describe Barcode
+    describe(dotPlot)
 
     cv.waitKey(0)
 

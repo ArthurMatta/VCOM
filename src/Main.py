@@ -6,26 +6,45 @@ filepath = "TestFiles/"
 
 
 def openfile(filename):
+    """
+    Load the image.
+
+    :param filename:
+    :return grayscale image;
+    """
+
     global filepath
-    img = cv.imread(f'{filepath}{filename}', 0)
-    height, width = img.shape
+    img = cv.imread(f'{filepath}{filename}')
+    height, width, _ = img.shape
     print(f'Initial image Width: {width}, Height: {height}')
     return img
 
 
-def highlight_details(img):
-    sobel_x = cv.Sobel(img, cv.CV_32F, dx=1, dy=0, ksize=-1)
-    sobel_y = cv.Sobel(img, cv.CV_32F, dx=0, dy=1, ksize=-1)
+def compute_gradient(img):
+    """
+    Construct the gradient magnitude representation of the grayscale image
+    in the horizontal and vertical directions.
 
-    img = cv.subtract(sobel_x, sobel_y)
-    img = cv.convertScaleAbs(img)
+    :param img:
+    :return gradient;
+    """
 
-    return img
+    grad_x = cv.Sobel(img, cv.CV_32F, dx=1, dy=0, ksize=-1)
+    grad_y = cv.Sobel(img, cv.CV_32F, dx=0, dy=1, ksize=-1)
+
+    gradient = cv.subtract(grad_x, grad_y)
+    gradient = cv.convertScaleAbs(gradient)
+
+    return gradient
 
 
-def highlight_code(img):
-    blurred = cv.blur(img, (9, 9))
-    (_, thresh) = cv.threshold(blurred, 225, 255, cv.THRESH_BINARY)
+def filter_image(img):
+    """
+    Filter the image to remove its noise.
+
+    :param img:
+    :return filtered image:
+    """
 
     kernel = cv.getStructuringElement(cv.MORPH_RECT, (21, 7))
     img = cv.morphologyEx(thresh, cv.MORPH_CLOSE, kernel)
@@ -36,21 +55,27 @@ def highlight_code(img):
     return img
 
 
-def find_box(img):
-    contour = cv.findContours(img.copy(), cv.RETR_EXTERNAL,
-                           cv.CHAIN_APPROX_SIMPLE)
+def find_contours(img):
+    """
+    Find the contours of the barcode.
+
+    :param img:
+    :return contours:
+    """
+
+    contour = cv.findContours(img.copy(), cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
     contour = iu.grab_contours(contour)
     c = sorted(contour, key=cv.contourArea, reverse=True)[0]
 
     rect = cv.minAreaRect(c)
-    box = cv.boxPoints(rect)
-    box = np.int0(box)
+    contours = cv.boxPoints(rect)
+    contours = np.int0(contours)
 
-    print(f'Boxed contents area: \n{box}')
+    print(f'Boxed contents area: \n{contours}')
     print("Barcode found at:")
-    print(f'y1:{box[2][1]}, y2:{box[0][1]}, x1:{box[0][0]}, x2:{box[2][0]}')
+    print(f'y1:{contours[2][1]}, y2:{contours[0][1]}, x1:{contours[0][0]}, x2:{contours[2][0]}')
 
-    return box
+    return contours
 
 
 def mask_image(coordinates, filename):
@@ -140,18 +165,20 @@ def main():
 
     # Open image file
     image = openfile(filename)
+    # Convert image to grayscale
+    gray = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
     # Highlight details in the image
-    gradient = highlight_details(image)
+    gradient = compute_gradient(gray)
     # Further highlight and blur the rest of the image
-    closed = highlight_code(gradient)
+    closed = filter_image(gradient)
     # Find the box that contains the barcode
-    box = find_box(closed)
+    contours = find_contours(closed)
     # Attempt image correction
-    masked_image = mask_image(box, filename)
+    masked_image = mask_image(contours, filename)
     # Crop and stretch image
-    final = crop(masked_image, box)
+    final = crop(masked_image, contours)
     # Warp barcode to window
-    warp = stretch(masked_image, box)
+    warp = stretch(masked_image, contours)
 
     cv.imshow('Final', final)
     cv.imshow('Warp', warp)

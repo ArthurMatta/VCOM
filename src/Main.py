@@ -165,8 +165,8 @@ def adjustContrastBrightness(image, histPercent = 1):
         maxGray -= 1
 
     # Calculate Alpha and Beta values
-    # alpha = 255 / (maxGray - minGray)
     # g(i,j) = alpha * f(i,j) + beta
+    # alpha = 255 / (maxGray - minGray)
     # beta = -minGray * alpha
     alpha = 255 / (maxGray - minGray)
     beta = -minGray * alpha
@@ -248,9 +248,63 @@ def describe(img):
             rGuard = width-x-1
             break
         
-    print(f'Barcode Right Guard detected at: {rGuard} pixel')
+    print(f'Barcode Right Guard detected at: {rGuard} pixel\n')
 
-    # TODO
+    # Calculate Total Size
+    total = rGuard - lGuard
+
+    # Describe Bars/Spaces in Percentages
+    start = -1
+    name = ""
+    for i in range(lGuard, rGuard + 1):
+
+        # Next Pixel
+        pixel = img[middleHeight, i]
+
+        # Detect Sequence Break Space -> Bar
+        if pixel[2] == 255 and name == "Bar":
+            # Calculate Percentage
+            end = i
+            percent = round((end-start)/total * 100, 2)
+            print(f'Space with {percent}%')
+
+            # Restart
+            start = -1
+            name = ""
+
+        # Detect Sequence Break Bar -> Space
+        if pixel[0] == 255 and name == "Space":
+            # Calculate Percentage
+            end = i
+            percent = round((end-start)/total * 100, 2)
+            print(f'Bar with {percent}%')
+
+            # Restart
+            start = -1
+            name = ""
+
+        # Start new measure
+        if start == -1:
+            # Mark start
+            start = i
+
+            # Identify Bar/Space
+            if pixel[2] == 255:
+                name = "Space"
+            else:
+                name = "Bar"
+
+    # If Start was up something was pending
+    if start != -1:
+        # Calculate Percentage
+        end = width
+        percent = round((end-start)/total * 100, 2)
+
+        # Flip type
+        if name == "Space":
+            print(f'Bar with {percent}%')
+        else:
+            print(f'Space with {percent}%')
 
 def main():
     print("Barcode Reader Start\n")

@@ -70,14 +70,12 @@ def find_contours(img):
     contours = iu.grab_contours(contours)
 
     if len(contours) == 0:
-        return None
+        return None, None
 
     c = sorted(contours, key=cv.contourArea, reverse=True)[0]
     rect = cv.minAreaRect(c)
     box = cv.boxPoints(rect)
     box = np.int0(box)
-
-    print(box)
 
     return box, rect[2]
 
@@ -361,7 +359,7 @@ def video_detection():
         _, frame = cap.read()
         frame = cv.flip(frame, 1)
 
-        box = bar_detection(frame)
+        box, _ = bar_detection(frame)
 
         if box is not None:
             cv.drawContours(frame, [box], -1, (0, 255, 0), 3)

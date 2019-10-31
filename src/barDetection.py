@@ -32,7 +32,6 @@ def compute_gradient(img):
     grad_x = cv.Sobel(img, cv.CV_32F, dx=1, dy=0, ksize=-1)
     grad_y = cv.Sobel(img, cv.CV_32F, dx=0, dy=1, ksize=-1)
 
-    gradient = cv.subtract(grad_x, grad_y)
     gradient = cv.convertScaleAbs(grad_x)
 
     return gradient

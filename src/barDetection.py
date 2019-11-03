@@ -150,6 +150,13 @@ def crop(img, coordinates, rot):
 
 # https://stackoverflow.com/questions/56905592/automatic-contrast-and-brightness-adjustment-of-a-color-photo-of-a-sheet-of-pape
 def adjust_contrast_brightness(image, histPercent=1):
+    """
+    Performs an automatic ajustment of the image contrast and brightness using a provided histogram side cut percentage
+    :param image:
+    :param histPercent:
+    :return:
+    """
+
     # Convert to Grayscale
     gray = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
 
@@ -189,6 +196,12 @@ def adjust_contrast_brightness(image, histPercent=1):
 
 
 def dotted(img):
+    """
+    Produces an image with red and blue lines to describe the information obtained from the barcode
+    :param img:
+    :return:
+    """
+
     # Define Dotted Colors
     red = [0, 0, 255]
     blue = [255, 0, 0]
@@ -228,6 +241,12 @@ def dotted(img):
 
 # https://cosmosmagazine.com/technology/how-do-barcodes-work
 def describe(img):
+    """
+    Produces a textual representation of the barcode as percentage length of each bar/space
+    :param img:
+    :return:
+    """
+
     print('\nStarting Barcode Description\n')
 
     # Get Shape

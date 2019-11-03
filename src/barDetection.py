@@ -65,7 +65,8 @@ def find_contours(img):
     :return contours:
     """
 
-    contours = cv.findContours(img.copy(), cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
+    contours = cv.findContours(
+        img.copy(), cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
     contours = iu.grab_contours(contours)
 
     if len(contours) == 0:
@@ -107,10 +108,14 @@ def find_extremes(coordinates):
     min_y = min(Ys)
     max_y = max(Ys)
 
-    if min_x < 0: min_x = 0
-    if max_x < 0: max_x = 0
-    if min_y < 0: min_y = 0
-    if max_y < 0: max_y = 0
+    if min_x < 0:
+        min_x = 0
+    if max_x < 0:
+        max_x = 0
+    if min_y < 0:
+        min_y = 0
+    if max_y < 0:
+        max_y = 0
 
     return max_x, min_x, max_y, min_y
 

@@ -33,6 +33,7 @@ def compute_gradient(img):
     grad_y = cv.Sobel(img, cv.CV_32F, dx=0, dy=1, ksize=-1)
 
     gradient = cv.convertScaleAbs(grad_x)
+    cv.imshow("Gradient", gradient)
 
     return gradient
 
@@ -54,6 +55,9 @@ def filter_image(img):
 
     closed = cv.erode(closed, None, iterations=4)
     closed = cv.dilate(closed, None, iterations=4)
+
+    cv.imshow("Filtered", closed)
+
     return closed
 
 
@@ -100,6 +104,11 @@ def mask_image(coordinates, image):
 
 
 def find_extremes(coordinates):
+    """
+    For a given group of coordinates of a rectangle, finds the two corner vertexes
+    :param coordinates:
+    :return:
+    """
     Xs = [i[0] for i in coordinates]
     Ys = [i[1] for i in coordinates]
 
@@ -313,6 +322,12 @@ def describe(img):
 
 
 def bar_detection(image):
+    """
+    Finds the barcode in a given image object and returns the coordinates of a rectangle containing the barcode and the
+    rotation of the rectangle.
+    :param image:
+    :return:
+    """
     # Convert image to grayscale
     gray = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
     # Highlight details in the image
@@ -326,6 +341,11 @@ def bar_detection(image):
 
 
 def image_detection(filename):
+    """
+    In a given image file, finds a barcode, crops it, color corrects and processes the bars.
+    :param filename:
+    :return:
+    """
     # Open image file
     image = openfile(filename)
     # Detect barcode
@@ -357,6 +377,10 @@ def image_detection(filename):
 
 
 def video_detection():
+    """
+    Highlights a barcode in a live video feed.
+    :return:
+    """
     cap = cv.VideoCapture(0)
 
     while True:

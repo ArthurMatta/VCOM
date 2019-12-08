@@ -32,8 +32,8 @@ def compute_gradient(img):
     grad_x = cv.Sobel(img, cv.CV_32F, dx=1, dy=0, ksize=-1)
     grad_y = cv.Sobel(img, cv.CV_32F, dx=0, dy=1, ksize=-1)
 
-    gradient = cv.subtract(grad_x, grad_y)
     gradient = cv.convertScaleAbs(grad_x)
+    cv.imshow("Gradient", gradient)
 
     return gradient
 
@@ -55,6 +55,9 @@ def filter_image(img):
 
     closed = cv.erode(closed, None, iterations=4)
     closed = cv.dilate(closed, None, iterations=4)
+
+    cv.imshow("Filtered", closed)
+
     return closed
 
 
@@ -66,7 +69,8 @@ def find_contours(img):
     :return contours:
     """
 
-    contours = cv.findContours(img.copy(), cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
+    contours = cv.findContours(
+        img.copy(), cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
     contours = iu.grab_contours(contours)
 
     if len(contours) == 0:
@@ -100,6 +104,11 @@ def mask_image(coordinates, image):
 
 
 def find_extremes(coordinates):
+    """
+    For a given group of coordinates of a rectangle, finds the two corner vertexes
+    :param coordinates:
+    :return:
+    """
     Xs = [i[0] for i in coordinates]
     Ys = [i[1] for i in coordinates]
 
@@ -108,10 +117,14 @@ def find_extremes(coordinates):
     min_y = min(Ys)
     max_y = max(Ys)
 
-    if min_x < 0: min_x = 0
-    if max_x < 0: max_x = 0
-    if min_y < 0: min_y = 0
-    if max_y < 0: max_y = 0
+    if min_x < 0:
+        min_x = 0
+    if max_x < 0:
+        max_x = 0
+    if min_y < 0:
+        min_y = 0
+    if max_y < 0:
+        max_y = 0
 
     return max_x, min_x, max_y, min_y
 
@@ -137,6 +150,13 @@ def crop(img, coordinates, rot):
 
 # https://stackoverflow.com/questions/56905592/automatic-contrast-and-brightness-adjustment-of-a-color-photo-of-a-sheet-of-pape
 def adjust_contrast_brightness(image, histPercent=1):
+    """
+    Performs an automatic ajustment of the image contrast and brightness using a provided histogram side cut percentage
+    :param image:
+    :param histPercent:
+    :return:
+    """
+
     # Convert to Grayscale
     gray = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
 
@@ -176,6 +196,12 @@ def adjust_contrast_brightness(image, histPercent=1):
 
 
 def dotted(img):
+    """
+    Produces an image with red and blue lines to describe the information obtained from the barcode
+    :param img:
+    :return:
+    """
+
     # Define Dotted Colors
     red = [0, 0, 255]
     blue = [255, 0, 0]
@@ -215,6 +241,12 @@ def dotted(img):
 
 # https://cosmosmagazine.com/technology/how-do-barcodes-work
 def describe(img):
+    """
+    Produces a textual representation of the barcode as percentage length of each bar/space
+    :param img:
+    :return:
+    """
+
     print('\nStarting Barcode Description\n')
 
     # Get Shape
@@ -309,6 +341,12 @@ def describe(img):
 
 
 def bar_detection(image):
+    """
+    Finds the barcode in a given image object and returns the coordinates of a rectangle containing the barcode and the
+    rotation of the rectangle.
+    :param image:
+    :return:
+    """
     # Convert image to grayscale
     gray = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
     # Highlight details in the image
@@ -322,6 +360,11 @@ def bar_detection(image):
 
 
 def image_detection(filename):
+    """
+    In a given image file, finds a barcode, crops it, color corrects and processes the bars.
+    :param filename:
+    :return:
+    """
     # Open image file
     image = openfile(filename)
     # Detect barcode
@@ -353,6 +396,10 @@ def image_detection(filename):
 
 
 def video_detection():
+    """
+    Highlights a barcode in a live video feed.
+    :return:
+    """
     cap = cv.VideoCapture(0)
 
     while True:

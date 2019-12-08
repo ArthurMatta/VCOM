@@ -26,20 +26,24 @@ class GUI(wx.Frame):
     def __init__(self, parent, title):
         style = wx.SYSTEM_MENU | wx.MINIMIZE_BOX | wx.CLOSE_BOX
         width, height = 300, 150
-        wx.Frame.__init__(self, parent, title=title, size=(width, height), style=style)
+        wx.Frame.__init__(self, parent, title=title,
+                          size=(width, height), style=style)
 
         self.CreateStatusBar()
         self.SetStatusText("Welcome to Barcode Detector!")
 
-        st = wx.StaticText(parent=self, label="Barcode Detector", pos=(50, 5), size=(width, height / 10))
+        st = wx.StaticText(parent=self, label="Barcode Detector",
+                           pos=(50, 5), size=(width, height / 10))
         font = st.GetFont()
         font.PointSize += 10
         font = font.Bold()
         st.SetFont(font)
 
-        video_button = wx.Button(parent=self, label="Video", name="video", pos=(60, 50), size=(75, 30))
+        video_button = wx.Button(
+            parent=self, label="Video", name="video", pos=(60, 50), size=(75, 30))
         self.Bind(wx.EVT_BUTTON, self.onclick, video_button)
-        image_button = wx.Button(parent=self, label="Image", name="image", pos=(165, 50), size=(75, 30))
+        image_button = wx.Button(
+            parent=self, label="Image", name="image", pos=(165, 50), size=(75, 30))
         self.Bind(wx.EVT_BUTTON, self.onclick, image_button)
 
     @staticmethod

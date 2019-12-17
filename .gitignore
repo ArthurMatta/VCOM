@@ -1,2 +1,5 @@
 .DS_Store
 Project_1/src/__pycache__
+
+Project_2/**
+!Project_2/main.py

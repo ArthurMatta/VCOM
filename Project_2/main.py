@@ -1,6 +1,8 @@
 from os import walk
 
-from matplotlib import pyplot as plt
+import cv2 as cv
+import numpy as np
+from sklearn.linear_model import SGDClassifier
 
 from Project.Project_2.scripts.utils import *
 
@@ -8,69 +10,90 @@ from Project.Project_2.scripts.utils import *
 data = [file for file in list(walk('data'))[0][2] if file.endswith('.mhd')]
 data = sorted(data)
 
-# Get the mhd masks
-masks = [file for file in list(walk('masks'))[0][2] if file.endswith('.mhd')]
-masks = sorted(masks)
-
 # Read nodules csv
-lines = readCsv('trainset_csv/trainNodules.csv')
+lines = readCsv('trainset_csv/trainNodules_gt.csv')
 header = lines[0]
 nodules = lines[1:]
 
-# Build a dict based on the LNDb ID
+# Create Bag of Words
+detector = cv.KAZE_create()
+matcher = cv.FlannBasedMatcher()
+bowTrainer = cv.BOWKMeansTrainer(100)
+bowExtractor = cv.BOWImgDescriptorExtractor(detector, matcher)
+
 LNDb = {}
-for d in data:
-    id = d.strip('LNDb-').strip('.mhd').lstrip('0')
-    m = [mask for mask in masks if mask.lstrip('LNDb-')[:4].lstrip('0') == id]
-    n = [nodule for nodule in nodules if nodule[header.index('LNDbID')] == id]
 
-    LNDb[id] = {}
-    LNDb[id]['Image'] = d
-    LNDb[id]['Masks'] = m
-    LNDb[id]['Nodules'] = n
+for filename in data:
+    # Extract ID
+    LNDbID = int(filename.lstrip('LNDb-').rstrip('.mhd').lstrip('0'))
 
-for LNDbID, LNDbValues in LNDb.items():
-    LNDbImage = LNDbValues['Image']
-    LNDbMasks = LNDbValues['Masks']
-    LNDbNodules = LNDbValues['Nodules']
+    # Get nodule findings associated with ID
+    LNDbNodules = [nodule for nodule in nodules if int(nodule[header.index('LNDbID')]) == LNDbID]
 
-    [scan, spacing, origin, transfmat] = readMhd(f'data/{LNDbImage}')
+    # Read image
+    [scan, spacing, origin, transfmat] = readMhd(f'data/{filename}')
 
-    for Mask in LNDbMasks:
-        [mask, spacing, origin, transfmat] = readMhd(f'masks/{Mask}')
-        RadID = Mask[::-1][4]
+    # Iterate through nodule findings
+    for nodule in LNDbNodules:
+        FindingID = int(nodule[header.index('FindingID')])
+        RadID = nodule[header.index('RadID')]
+        isNodule = bool(int(nodule[header.index('Nodule')]))
+        Texture = float(nodule[header.index('Text')])
 
-        for nod in LNDbNodules:
-            if nod[header.index('LNDbID')] == LNDbID and nod[header.index('RadID')] == RadID:
-                FindingID = nod[header.index('FindingID')]
-                ctr = np.array(
-                    [float(nod[header.index('x')]), float(nod[header.index('y')]), float(nod[header.index('z')])])
+        # Get world coordinates
+        x = float(nodule[header.index('x')])
+        y = float(nodule[header.index('y')])
+        z = float(nodule[header.index('z')])
 
-                # Convert coordinates to image
-                transfmat_toimg, transfmat_toworld = getImgWorldTransfMats(spacing, transfmat)
-                ctr = convertToImgCoord(ctr, origin, transfmat_toimg)
+        # Convert world coordinates to image coordinates
+        ctr = np.array([x, y, z])
+        transfmat_toimg, transfmat_toworld = getImgWorldTransfMats(spacing, transfmat)
+        ctr = convertToImgCoord(ctr, origin, transfmat_toimg)
 
-                # Display nodule scan/mask slice
-                fig, axs = plt.subplots(1, 2)
-                axs[0].imshow(scan[int(ctr[2])])
-                axs[1].imshow(mask[int(ctr[2])])
-                fig.suptitle(f'LNDbID: {LNDbID} | RadID: {RadID} | FindingID: {FindingID}')
-                plt.show()
+        # Determine nodule class
+        if isNodule:
+            if 0 < Texture < 2.3:
+                Class = 'Ground Glass Opacities (GGO)'
+            elif 2.3 <= Texture < 3.6:
+                Class = 'Part Solid'
+            elif 3.6 <= Texture:
+                Class = 'Solid'
+            else:
+                Class = None
+        else:
+            Class = 'Not a Nodule'
 
-                # Extract cube around nodule
-                scan_cube = extractCube(scan, spacing, ctr)
-                mk = mask.copy()
-                mk[mk != int(FindingID)] = 0
-                mk[mk > 0] = 1
-                mask_cube = extractCube(mk, spacing, ctr)
+        print(f"ID {LNDbID} - Finding {FindingID} - Class {Class} - Radiologists {RadID} - xyz {ctr}")
 
-                # Display mid slices from resampled scan/mask
-                fig, axs = plt.subplots(2, 3)
-                axs[0, 0].imshow(scan_cube[int(scan_cube.shape[0] / 2), :, :])
-                axs[1, 0].imshow(mask_cube[int(mask_cube.shape[0] / 2), :, :])
-                axs[0, 1].imshow(scan_cube[:, int(scan_cube.shape[1] / 2), :])
-                axs[1, 1].imshow(mask_cube[:, int(mask_cube.shape[1] / 2), :])
-                axs[0, 2].imshow(scan_cube[:, :, int(scan_cube.shape[2] / 2)])
-                axs[1, 2].imshow(mask_cube[:, :, int(mask_cube.shape[2] / 2)])
-                fig.suptitle(f'LNDbID: {LNDbID} | RadID: {RadID} | FindingID: {FindingID}')
-                plt.show()
+        # Read image
+        img = np.array(scan[int(ctr[2])]).astype('float32')
+        if img.shape != (512, 512):
+            continue
+
+        # Extract image's key points and descriptor
+        kp, des = detector.detectAndCompute(img, None)
+
+        # Add image's descriptor to BoW
+        if des is not None:
+            bowTrainer.add(des)
+
+            LNDb[f'{LNDbID}_{FindingID}'] = {}
+            LNDb[f'{LNDbID}_{FindingID}']['image'] = img
+            LNDb[f'{LNDbID}_{FindingID}']['class'] = Class
+            LNDb[f'{LNDbID}_{FindingID}']['keypoints'] = kp
+            LNDb[f'{LNDbID}_{FindingID}']['descriptor'] = des
+
+print('LOOP FINISHED')
+
+# Set BoW vocabulary
+print('CREATING VOCABULARY')
+bowExtractor.setVocabulary(bowTrainer.cluster())
+
+print('COMPUTING')
+# Compute images
+for id, values in LNDb.items():
+    LNDb[id]['bow'] = np.linalg.norm(bowExtractor.compute(values['image'], values['keypoints'], values['descriptor']))
+    print(LNDb[id]['bow'])
+
+# Classifier
+clf = SGDClassifier()

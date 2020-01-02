@@ -1,10 +1,11 @@
 from os import walk
 
-import cv2 as cv
 import numpy as np
-from sklearn.linear_model import SGDClassifier
+from keras import Sequential
+from keras.layers import Convolution2D, Activation, MaxPooling2D, Dropout, Flatten, Dense
+from keras.utils import to_categorical
 
-from Project.Project_2.scripts.utils import *
+from Project.Project_2.scripts.utils import readCsv, readMhd, getImgWorldTransfMats, convertToImgCoord
 
 # Get the mhd images
 data = [file for file in list(walk('data'))[0][2] if file.endswith('.mhd')]
@@ -15,11 +16,9 @@ lines = readCsv('trainset_csv/trainNodules_gt.csv')
 header = lines[0]
 nodules = lines[1:]
 
-# Create Bag of Words
-detector = cv.KAZE_create()
-matcher = cv.FlannBasedMatcher()
-bowTrainer = cv.BOWKMeansTrainer(100)
-bowExtractor = cv.BOWImgDescriptorExtractor(detector, matcher)
+# ML variables
+X = []
+Y = []
 
 LNDb = {}
 
@@ -53,47 +52,57 @@ for filename in data:
         # Determine nodule class
         if isNodule:
             if 0 < Texture < 2.3:
-                Class = 'Ground Glass Opacities (GGO)'
+                Class = 1  # 'Ground Glass Opacities (GGO)'
             elif 2.3 <= Texture < 3.6:
-                Class = 'Part Solid'
+                Class = 2  # 'Part Solid'
             elif 3.6 <= Texture:
-                Class = 'Solid'
-            else:
-                Class = None
+                Class = 3  # 'Solid'
         else:
-            Class = 'Not a Nodule'
+            Class = 0  # 'Not a Nodule'
 
         print(f"ID {LNDbID} - Finding {FindingID} - Class {Class} - Radiologists {RadID} - xyz {ctr}")
 
         # Read image
         img = np.array(scan[int(ctr[2])]).astype('float32')
-        if img.shape != (512, 512):
+        img = np.resize(img, (img.shape[0], img.shape[1], 1))
+        if img.shape != (512, 512, 1):
             continue
 
-        # Extract image's key points and descriptor
-        kp, des = detector.detectAndCompute(img, None)
+        X.append(img)
+        Y.append(Class)
 
-        # Add image's descriptor to BoW
-        if des is not None:
-            bowTrainer.add(des)
+# Split data into train and test sets
+X = np.asarray(X)
+Y = np.asarray(Y)
+X_train, X_test = X[:218], X[218:]
+Y_train, Y_test = Y[:218], Y[218:]
 
-            LNDb[f'{LNDbID}_{FindingID}'] = {}
-            LNDb[f'{LNDbID}_{FindingID}']['image'] = img
-            LNDb[f'{LNDbID}_{FindingID}']['class'] = Class
-            LNDb[f'{LNDbID}_{FindingID}']['keypoints'] = kp
-            LNDb[f'{LNDbID}_{FindingID}']['descriptor'] = des
+Y_train = to_categorical(Y_train)
+Y_test = to_categorical(Y_test)
 
-print('LOOP FINISHED')
+# Create CNN model
+nb_filters = 32
+pool_size = (2, 2)
+kernel_size = (3, 3)
+input_shape = X[0].shape
+model = Sequential()
+model.add(Convolution2D(nb_filters, kernel_size, input_shape=input_shape, padding='valid'))
+model.add(Activation('relu'))
+model.add(Convolution2D(nb_filters, kernel_size))
+model.add(Activation('relu'))
+model.add(MaxPooling2D(pool_size=pool_size))
+model.add(Dropout(0.25))
+model.add(Flatten())
+model.add(Dense(128))
+model.add(Activation('relu'))
+model.add(Dropout(0.5))
+model.add(Dense(4))
+model.add(Activation('softmax'))
+model.compile(loss='categorical_crossentropy', optimizer='adadelta', metrics=['accuracy'])
 
-# Set BoW vocabulary
-print('CREATING VOCABULARY')
-bowExtractor.setVocabulary(bowTrainer.cluster())
+# Train the model
+history = model.fit(X_train, Y_train, batch_size=64, epochs=3, verbose=1, validation_split=0.1)
 
-print('COMPUTING')
-# Compute images
-for id, values in LNDb.items():
-    LNDb[id]['bow'] = np.linalg.norm(bowExtractor.compute(values['image'], values['keypoints'], values['descriptor']))
-    print(LNDb[id]['bow'])
-
-# Classifier
-clf = SGDClassifier()
+# Test the model
+score = model.evaluate(X_test, Y_test)
+print(f'Test accuracy: {score[1]:0.05f}')

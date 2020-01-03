@@ -5,7 +5,9 @@ from keras import Sequential
 from keras.layers import Convolution2D, Activation, MaxPooling2D, Dropout, Flatten, Dense
 from keras.utils import to_categorical
 
-from Project.Project_2.scripts.utils import readCsv, readMhd, getImgWorldTransfMats, convertToImgCoord
+from scripts.utils import readCsv, readMhd, getImgWorldTransfMats, convertToImgCoord
+
+import keyboard
 
 # Get the mhd images
 data = [file for file in list(walk('data'))[0][2] if file.endswith('.mhd')]
@@ -80,29 +82,16 @@ Y_train, Y_test = Y[:218], Y[218:]
 Y_train = to_categorical(Y_train)
 Y_test = to_categorical(Y_test)
 
-# Create CNN model
-nb_filters = 32
-pool_size = (2, 2)
-kernel_size = (3, 3)
-input_shape = X[0].shape
-model = Sequential()
-model.add(Convolution2D(nb_filters, kernel_size, input_shape=input_shape, padding='valid'))
-model.add(Activation('relu'))
-model.add(Convolution2D(nb_filters, kernel_size))
-model.add(Activation('relu'))
-model.add(MaxPooling2D(pool_size=pool_size))
-model.add(Dropout(0.25))
-model.add(Flatten())
-model.add(Dense(128))
-model.add(Activation('relu'))
-model.add(Dropout(0.5))
-model.add(Dense(4))
-model.add(Activation('softmax'))
-model.compile(loss='categorical_crossentropy', optimizer='adadelta', metrics=['accuracy'])
+# Menu
+while(1):
 
-# Train the model
-history = model.fit(X_train, Y_train, batch_size=64, epochs=3, verbose=1, validation_split=0.1)
+    print('Data Loading finished (press r to run CNN) (press e to exit)')
 
-# Test the model
-score = model.evaluate(X_test, Y_test)
-print(f'Test accuracy: {score[1]:0.05f}')
+    k = keyboard.read_key()
+    if k == 'r':
+        # Run CNN
+        f = open('CNN.py')
+        source = f.read()
+        exec(source)
+    elif k == 'e':
+        break

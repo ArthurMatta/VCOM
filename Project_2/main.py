@@ -1,13 +1,14 @@
 from os import walk
 
 import numpy as np
+
 from keras import Sequential
-from keras.layers import Convolution2D, Activation, MaxPooling2D, Dropout, Flatten, Dense
+from keras.layers import Convolution2D, Activation, MaxPooling2D, Dropout, Flatten, Dense, BatchNormalization
 from keras.utils import to_categorical
 
 from scripts.utils import readCsv, readMhd, getImgWorldTransfMats, convertToImgCoord
 
-import keyboard
+import traceback
 
 # Get the mhd images
 data = [file for file in list(walk('data'))[0][2] if file.endswith('.mhd')]
@@ -85,13 +86,18 @@ Y_test = to_categorical(Y_test)
 # Menu
 while(1):
 
-    print('Data Loading finished (press r to run CNN) (press e to exit)')
+    print('Data Loading finished (press r + ENTER to run CNN) (press e + ENTER to exit)')
 
-    k = keyboard.read_key()
-    if k == 'r':
-        # Run CNN
-        f = open('CNN.py')
-        source = f.read()
-        exec(source)
-    elif k == 'e':
+    k = input()
+    if k == "r":
+        try:
+            # Run CNN
+            f = open('CNN.py')
+            source = f.read()
+            exec(source)
+        except Exception:
+            print('CNN Fail')
+            print(traceback.format_exc())
+            pass
+    elif k == "e":
         break

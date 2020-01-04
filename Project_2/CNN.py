@@ -25,10 +25,6 @@ model.add(Convolution2D(nb_filters, kernel_size, input_shape=input_shape))
 model.add(Activation('relu'))
 model.add(MaxPooling2D(pool_size=pool_size))
 
-model.add(Convolution2D(nb_filters, kernel_size))
-model.add(Activation('relu'))
-model.add(MaxPooling2D(pool_size=pool_size))
-
 model.add(Convolution2D(nb_filters*2, kernel_size))
 model.add(Activation('relu'))
 model.add(MaxPooling2D(pool_size=pool_size))

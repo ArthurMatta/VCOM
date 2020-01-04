@@ -27,7 +27,7 @@ LNDb = {}
 
 for filename in data:
     # Extract ID
-    LNDbID = int(filename.lstrip('LNDb-').rstrip('.mhd').lstrip('0'))
+    LNDbID = int(filename.lstrip('LNDb-').split('_')[0])
 
     # Get nodule findings associated with ID
     LNDbNodules = [nodule for nodule in nodules if int(nodule[header.index('LNDbID')]) == LNDbID]
@@ -74,14 +74,9 @@ for filename in data:
         X.append(img)
         Y.append(Class)
 
-# Split data into train and test sets
+# Consider as Arrays
 X = np.asarray(X)
 Y = np.asarray(Y)
-X_train, X_test = X[:218], X[218:]
-Y_train, Y_test = Y[:218], Y[218:]
-
-Y_train = to_categorical(Y_train)
-Y_test = to_categorical(Y_test)
 
 # Menu
 while(1):

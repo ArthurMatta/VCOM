@@ -18,7 +18,7 @@ nb_filters = 32
 pool_size = (2, 2)
 kernel_size = (5, 5)
 input_shape = X[0].shape
-num_classes = 4
+num_classes = 3
 
 model = Sequential()
 
@@ -36,9 +36,9 @@ model.add(MaxPooling2D(pool_size=pool_size))
 
 model.add(Flatten())
 model.add(Dense(64, activation='relu'))
-model.add(Dropout(0.2))
+model.add(Dropout(0.5))
 model.add(Dense(num_classes, activation='softmax'))
-model.compile(loss='categorical_crossentropy', optimizer='rmsprop', metrics=['accuracy'])
+model.compile(loss='categorical_crossentropy', optimizer='sgd', metrics=['accuracy'])
 
 model.summary()
 

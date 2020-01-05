@@ -55,11 +55,11 @@ for filename in data:
         # Determine nodule class
         if isNodule:
             if 0 < Texture < 2.3:
-                Class = 1  # 'Ground Glass Opacities (GGO)'
+                Class = 0  # 'Ground Glass Opacities (GGO)'
             elif 2.3 <= Texture < 3.6:
-                Class = 2  # 'Part Solid'
+                Class = 1  # 'Part Solid'
             elif 3.6 <= Texture:
-                Class = 3  # 'Solid'
+                Class = 2  # 'Solid'
         else:
             continue  # 'Not a Nodule'
 

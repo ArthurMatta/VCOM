@@ -70,7 +70,8 @@ for filename in data:
         img = np.resize(img, (img.shape[0], img.shape[1], 1))
         if img.shape != (512, 512, 1):
             continue
-
+        if Class == 0:
+            continue
         X.append(img)
         Y.append(Class)
 

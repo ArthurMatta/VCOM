@@ -61,7 +61,7 @@ for filename in data:
             elif 3.6 <= Texture:
                 Class = 3  # 'Solid'
         else:
-            Class = 0  # 'Not a Nodule'
+            continue  # 'Not a Nodule'
 
         print(f"ID {LNDbID} - Finding {FindingID} - Class {Class} - Radiologists {RadID} - xyz {ctr}")
 
@@ -69,8 +69,6 @@ for filename in data:
         img = np.array(scan[int(ctr[2])]).astype('float32')
         img = np.resize(img, (img.shape[0], img.shape[1], 1))
         if img.shape != (512, 512, 1):
-            continue
-        if Class == 0:
             continue
         X.append(img)
         Y.append(Class)

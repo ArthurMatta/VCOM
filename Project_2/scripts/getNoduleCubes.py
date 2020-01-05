@@ -35,7 +35,7 @@ for n in nodules:
 
         for rad, radfinding in zip(rads, radfindings):
             # Read segmentation mask
-            [mask, _, _, _] = readMhd('masks/LNDb-{:04}_rad{}.mhd'.format(lnd, rad))
+            [mask, _, _, _] = readMhd('data/LNDb-{:04}_rad{}.mhd'.format(lnd, rad))
 
             # Extract cube around nodule
             scan_cube = extractCube(scan, spacing, ctr)

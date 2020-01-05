@@ -92,13 +92,13 @@ if __name__ == "__main__":
     rad = 1
     finding = 1
     # Read scan
-    [scan, spacing, origin, transfmat] = readMhd('data/LNDb-{:04}.mhd'.format(lnd))
+    [scan, spacing, origin, transfmat] = readMhd('../data/LNDb-{:04}.mhd'.format(lnd))
     print(spacing, origin, transfmat)
     # Read segmentation mask
-    [mask, spacing, origin, transfmat] = readMhd('masks/LNDb-{:04}_rad{}.mhd'.format(lnd, rad))
+    [mask, spacing, origin, transfmat] = readMhd('../masks/LNDb-{:04}_rad{}.mhd'.format(lnd, rad))
     print(spacing, origin, transfmat)
     # Read nodules csv
-    csvlines = readCsv('trainset_csv/trainNodules.csv')
+    csvlines = readCsv('../trainset_csv/trainNodules.csv')
     header = csvlines[0]
     nodules = csvlines[1:]
     for n in nodules:

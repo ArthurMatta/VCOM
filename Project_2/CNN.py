@@ -16,30 +16,39 @@ Y_test = to_categorical(Y_test)
 # Create CNN model
 nb_filters = 32
 pool_size = (2, 2)
-kernel_size = (3, 3)
+kernel_size = (4, 4)
 input_shape = X[0].shape
+num_classes = 4
 
 model = Sequential()
 
-model.add(Convolution2D(nb_filters, kernel_size, input_shape=input_shape))
-model.add(Activation('relu'))
-model.add(MaxPooling2D(pool_size=pool_size))
+model.add(Convolution2D(nb_filters, kernel_size, input_shape=input_shape, activation='relu', padding='same'))
+model.add(Convolution2D(nb_filters, kernel_size, activation='relu', padding='same'))
+model.add(MaxPooling2D(pool_size=pool_size, strides=(2, 2)))
 
-model.add(Convolution2D(nb_filters*2, kernel_size))
-model.add(Activation('relu'))
-model.add(MaxPooling2D(pool_size=pool_size))
+model.add(Convolution2D(nb_filters*2, kernel_size, activation='relu', padding='same'))
+model.add(Convolution2D(nb_filters*2, kernel_size, activation='relu', padding='same'))
+model.add(MaxPooling2D(pool_size=pool_size, strides=(2, 2)))
+
+model.add(Convolution2D(nb_filters*4, kernel_size, activation='relu', padding='same'))
+model.add(Convolution2D(nb_filters*4, kernel_size, activation='relu', padding='same'))
+model.add(MaxPooling2D(pool_size=pool_size, strides=(2, 2)))
 
 model.add(Flatten())
-model.add(Dense(64))
-model.add(Activation('relu'))
-model.add(Dropout(0.5))
-model.add(Dense(4))
-model.add(Activation('softmax'))
+model.add(Dense(64, activation='relu'))
+model.add(Dense(64, activation='relu'))
+model.add(Dropout(0.2))
+model.add(Dense(num_classes, activation='softmax'))
 model.compile(loss='categorical_crossentropy', optimizer='rmsprop', metrics=['accuracy'])
 
+model.summary()
+
 # Train the model
-history = model.fit(X_train, Y_train, batch_size=64, epochs=5, verbose=1, validation_split=0.1)
+history = model.fit(X_train, Y_train, batch_size=8, epochs=20, verbose=1, validation_split=0.1)
 
 # Test the model
-score = model.evaluate(X_test, Y_test)
-print(f'Test accuracy: {score[1]:0.05f}')
+loss, score = model.evaluate(X_train, Y_train)
+print(f'Test accuracy (train): {score:0.05f} loss: {loss:0.05f}')
+
+loss, score = model.evaluate(X_test, Y_test)
+print(f'Test accuracy (test): {score:0.05f} loss: {loss:0.05f}')
